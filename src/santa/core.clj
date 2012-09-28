@@ -38,26 +38,18 @@
 (defn meet-in-study [id]
   (println "Elf" id "meeting in the study"))
 
-(defn elf
-  [group id]
-  (helper group #(meet-in-study id)))
-
-(defn elf-thread [group id]
+(defn thread [group id work-fn]
   (start-thread
-   #(do (random-delay)
-        (elf group id)
-        (recur)
-        )))
-
-(defn reindeer
-  [group id]
-  (helper group #(deliver-toys id)))
+   (fn []
+     (random-delay)
+     (helper group #(work-fn id))
+     (recur))))
 
 (defn reindeer-thread [group id]
-  (start-thread
-   #(do (random-delay)
-        (reindeer group id)
-        (recur))))
+  (thread group id deliver-toys))
+
+(defn elf-thread [group id]
+  (thread group id meet-in-study))
 
 (defn operate-gate
   [gate]
@@ -72,7 +64,7 @@
         :remaining max-size
         :in-gate (make-gate max-size)
         :out-gate (make-gate max-size)
-        }
+        }`
        :validator #(>= (:remaining %) 0)))
 
 (defn join-group                  
@@ -81,7 +73,6 @@
             (if (= 0 remaining)
               (do (Thread/sleep 20)
                   (join-group group)))
-            
             (alter group #(update-in % [:remaining] dec))
             [(:in-gate @group) (:out-gate @group)])))
 
@@ -101,7 +92,7 @@
         
         (let [in (:in-gate e-group)
               out (:out-gate e-group)]
-          (do (println "***** With Elves *****")
+          (do (println "***** With elves *****")
               (operate-gate in)
               (operate-gate out))))
                                         ;)
@@ -122,9 +113,10 @@
 
 (defn -main
   [& args]
-  (dotimes [i 9] (do (println "Launching reindeer thread:" i)
-                     (reindeer-thread rein-group i)))
-  (dotimes [i 20] (do (println "Launching elf thread" i)
-                      (elf-thread elf-group i)))
-  (santa)
-  )
+  (dotimes [i 9]
+    (do (println "Launching reindeer thread:" i)
+        (reindeer-thread rein-group i)))
+  (dotimes [i 20]
+    (do (println "Launching elf thread" i)
+        (elf-thread elf-group i)))
+  (santa))
