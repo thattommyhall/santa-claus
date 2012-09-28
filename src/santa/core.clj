@@ -8,7 +8,7 @@
    (Thread. fn)))
 
 (defn random-delay []
-  (Thread/sleep (rand-int 100)))
+  (Thread/sleep (rand-int 10)))
 
 (defn make-gate
   [max-size]
@@ -32,18 +32,18 @@
         (pass-gate out-gate)
         )))
 
-(defn deliver-toys [id]
-  (println "Reindeer" id "delivering toys"))
-
-(defn meet-in-study [id]
-  (println "Elf" id "meeting in the study"))
-
 (defn thread [group id work-fn]
   (start-thread
    (fn []
      (random-delay)
      (helper group #(work-fn id))
      (recur))))
+
+(defn deliver-toys [id]
+  (println "Reindeer" id "delivering toys"))
+
+(defn meet-in-study [id]
+  (println "Elf" id "meeting in the study"))
 
 (defn reindeer-thread [group id]
   (thread group id deliver-toys))
@@ -55,8 +55,8 @@
   [gate]
   (dosync (alter gate assoc :remaining (:max-size @gate)))
   (while (> (:remaining @gate) 0)
-    (Thread/sleep 20))
-  )
+    ;(Thread/sleep 20)
+    ))
 
 (defn new-group
   [max-size]
@@ -64,7 +64,7 @@
         :remaining max-size
         :in-gate (make-gate max-size)
         :out-gate (make-gate max-size)
-        }`
+        }
        :validator #(>= (:remaining %) 0)))
 
 (defn join-group                  
@@ -77,46 +77,33 @@
             [(:in-gate @group) (:out-gate @group)])))
 
 (def elf-group (new-group 3))
-(def rein-group (new-group 9))
+(def reindeer-group (new-group 9))
+
+(defn handle-group [group group-name]
+  (let [current-group @group
+        {:keys [max-size remaining in-gate out-gate]} current-group]
+    (if (= 0 remaining)
+      (do (dosync
+           (ref-set group {:max-size max-size
+                           :remaining max-size
+                           :in-gate (make-gate max-size)
+                           :out-gate (make-gate max-size)}))
+          (println "***** With" group-name "*****")
+          (operate-gate in-gate)
+          (operate-gate out-gate)
+          true))))
 
 (defn santa []
-  (let [e-group @elf-group
-        r-group @rein-group]
-    (if (= 0 (:remaining e-group))
-      (let [max-size (:max-size e-group)]
-        (dosync
-         (ref-set elf-group {:max-size max-size
-                             :remaining max-size
-                             :in-gate (make-gate max-size)
-                             :out-gate (make-gate max-size)}))
-        
-        (let [in (:in-gate e-group)
-              out (:out-gate e-group)]
-          (do (println "***** With elves *****")
-              (operate-gate in)
-              (operate-gate out))))
-                                        ;)
-      (if (= 0 (:remaining  r-group))
-        (let [max-size (:max-size r-group)]
-          (dosync
-           (ref-set rein-group {:max-size max-size
-                               :remaining max-size
-                               :in-gate (make-gate max-size)
-                               :out-gate (make-gate max-size)}))
-          
-          (let [in (:in-gate  r-group)
-                out (:out-gate  r-group)]
-            (do (println "***** with reindeer *****")
-                (operate-gate in)
-                (operate-gate out)))))))
+  (while (handle-group elf-group "Elves")) 
+  (handle-group reindeer-group "Reindeer")
   (recur))
 
 (defn -main
   [& args]
   (dotimes [i 9]
     (do (println "Launching reindeer thread:" i)
-        (reindeer-thread rein-group i)))
-  (dotimes [i 20]
+        (reindeer-thread reindeer-group i)))
+  (dotimes [i 10]
     (do (println "Launching elf thread" i)
         (elf-thread elf-group i)))
   (santa))
