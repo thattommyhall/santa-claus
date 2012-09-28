@@ -46,12 +46,10 @@
      (recur))))
 
 (defn deliver-toys [id]
-  ;(random-delay)
   (threadsafe-print
    (str "Reindeer " id " delivering toys")))
 
 (defn meet-in-study [id]
-  ;(random-delay)
   (threadsafe-print
    (str "Elf " id " meeting in the study")))
 

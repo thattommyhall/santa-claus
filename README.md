@@ -1,5 +1,5 @@
 # Santa
-A fairly faithful translation into clojure of Simon Peyton Jones's solution to The Santa Claus Problem using haskells STM.
+A fairly faithful translation into clojure of Simon Peyton Jones's solution to The Santa Claus Problem using haskells STM from the Beautiful Code book.
 Had to use try/catch as clojures STM does not have retry or orElse, not sure how idomatic it is.
 
 ## License
