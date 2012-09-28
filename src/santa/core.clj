@@ -10,6 +10,12 @@
 (defn random-delay []
   (Thread/sleep (rand-int 10)))
 
+(def printer (agent 0))
+
+(defn threadsafe-print
+  [somestring]
+  (send printer println somestring))
+
 (defn make-gate
   [max-size]
   (ref {:max-size max-size
@@ -40,10 +46,14 @@
      (recur))))
 
 (defn deliver-toys [id]
-  (println "Reindeer" id "delivering toys"))
+  (random-delay)
+  (threadsafe-print
+   (str "Reindeer" id "delivering toys")))
 
 (defn meet-in-study [id]
-  (println "Elf" id "meeting in the study"))
+  (random-delay)
+  (threadsafe-print
+   (str "Elf" id "meeting in the study")))
 
 (defn reindeer-thread [group id]
   (thread group id deliver-toys))
@@ -88,7 +98,7 @@
                            :remaining max-size
                            :in-gate (make-gate max-size)
                            :out-gate (make-gate max-size)}))
-          (println "***** With" group-name "*****")
+          (threadsafe-print (str "***** With" group-name "*****"))
           (operate-gate in-gate)
           (operate-gate out-gate)
           true))))
