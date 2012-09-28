@@ -27,7 +27,7 @@
   (try 
     (dosync (alter gate #(update-in % [:remaining] dec)))
     (catch IllegalStateException e
-      (do (Thread/sleep 200)
+      (do ;(Thread/sleep 20)
           (pass-gate gate)))))
 
 (defn helper
@@ -46,12 +46,12 @@
      (recur))))
 
 (defn deliver-toys [id]
-  (random-delay)
+  ;(random-delay)
   (threadsafe-print
    (str "Reindeer " id " delivering toys")))
 
 (defn meet-in-study [id]
-  (random-delay)
+  ;(random-delay)
   (threadsafe-print
    (str "Elf " id " meeting in the study")))
 
@@ -79,12 +79,14 @@
 
 (defn join-group                  
   [group]
-  (dosync (let [{:keys [remaining max-size]} @group]
-            (if (= 0 remaining)
-              (do (Thread/sleep 20)
-                  (join-group group)))
-            (alter group #(update-in % [:remaining] dec))
-            [(:in-gate @group) (:out-gate @group)])))
+  (try 
+    (dosync (let [{:keys [remaining max-size in-gate out-gate]} @group]
+              (alter group #(update-in % [:remaining] dec))
+              [in-gate out-gate]))
+    (catch IllegalStateException e
+      (do ;(Thread/sleep 20)
+          (join-group group)))))
+
 
 (def elf-group (new-group 3))
 (def reindeer-group (new-group 9))
@@ -104,7 +106,7 @@
           true))))
 
 (defn santa []
-  (while (handle-group elf-group "Elves")) 
+  (while (handle-group elf-group "Elves"))
   (handle-group reindeer-group "Reindeer")
   (recur))
 
