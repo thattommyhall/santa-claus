@@ -8,7 +8,7 @@
    (Thread. fn)))
 
 (defn random-delay []
-  (Thread/sleep (rand-int 10)))
+  (Thread/sleep (rand-int 1000)))
 
 (def printer (agent 0))
 
@@ -48,12 +48,12 @@
 (defn deliver-toys [id]
   (random-delay)
   (threadsafe-print
-   (str "Reindeer" id "delivering toys")))
+   (str "Reindeer " id " delivering toys")))
 
 (defn meet-in-study [id]
   (random-delay)
   (threadsafe-print
-   (str "Elf" id "meeting in the study")))
+   (str "Elf " id " meeting in the study")))
 
 (defn reindeer-thread [group id]
   (thread group id deliver-toys))
